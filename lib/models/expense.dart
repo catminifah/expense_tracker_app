@@ -17,4 +17,6 @@ class Expense {
         amount: json['amount'].toDouble(),
         category: json['category'],
       );
+
+  get date => null;
 }

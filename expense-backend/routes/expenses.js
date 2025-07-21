@@ -2,25 +2,26 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 
-// ดึงรายการทั้งหมด
-router.get('/', (req, res) => {
-  db.query('SELECT * FROM expenses ORDER BY id DESC', (err, result) => {
-    if (err) return res.status(500).json({ error: err });
-    res.json(result);
-  });
+router.get('/', async (req, res) => {
+  try {
+    const result = await db.query('SELECT * FROM expenses ORDER BY id DESC');
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-// เพิ่มรายการใหม่
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   const { title, amount, category } = req.body;
-  db.query(
-    'INSERT INTO expenses (title, amount, category) VALUES (?, ?, ?)',
-    [title, amount, category],
-    (err, result) => {
-      if (err) return res.status(500).json({ error: err });
-      res.json({ id: result.insertId, title, amount, category });
-    }
-  );
+  try {
+    const result = await db.query(
+      'INSERT INTO expenses (title, amount, category) VALUES ($1, $2, $3) RETURNING *',
+      [title, amount, category]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 module.exports = router;
