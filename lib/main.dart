@@ -14,6 +14,7 @@ class MyApp extends StatelessWidget {
       builder: (context, _) {
         final isDark = context.watch<ThemeProvider>().isDark;
         return MaterialApp(
+          debugShowCheckedModeBanner: false,
           theme: ThemeData.light(),
           darkTheme: ThemeData.dark(),
           themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
