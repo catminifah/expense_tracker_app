@@ -17,7 +17,9 @@ class Expense {
     return Expense(
       id: json['id'],
       title: json['title'],
-      amount: (json['amount'] as num).toDouble(),
+      amount: double.parse(
+        json['amount'].toString(),
+      ),
       category: json['category'],
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'])

@@ -3,14 +3,18 @@ import 'package:http/http.dart' as http;
 import '../models/expense.dart';
 
 class ApiService {
-  static const baseUrl = 'https://your-api-domain.com/expenses';
+  static const baseUrl = 'https://expense-server-iqv1.onrender.com/expenses';
 
   static Future<List<Expense>?> fetchExpenses() async {
     try {
       final response = await http.get(Uri.parse(baseUrl));
+      print('Fetch status code: ${response.statusCode}');
       if (response.statusCode == 200) {
         final List jsonData = json.decode(response.body);
+        print('Fetch data count: ${jsonData.length}');
         return jsonData.map((e) => Expense.fromJson(e)).toList();
+      } else {
+        print('Fetch failed: ${response.body}');
       }
     } catch (e) {
       print('Error fetching expenses: $e');
@@ -18,7 +22,11 @@ class ApiService {
     return null;
   }
 
-  static Future<bool> addExpense(String title, double amount, String? category) async {
+  static Future<bool> addExpense(
+    String title,
+    double amount,
+    String? category,
+  ) async {
     try {
       final response = await http.post(
         Uri.parse(baseUrl),
@@ -29,6 +37,8 @@ class ApiService {
           'category': category,
         }),
       );
+      print('Add status code: ${response.statusCode}');
+      print('Add response body: ${response.body}');
       return response.statusCode == 200 || response.statusCode == 201;
     } catch (e) {
       print('Error adding expense: $e');
@@ -39,6 +49,8 @@ class ApiService {
   static Future<bool> deleteExpense(int id) async {
     try {
       final response = await http.delete(Uri.parse('$baseUrl/$id'));
+      print('Delete status code: ${response.statusCode}');
+      print('Delete response body: ${response.body}');
       return response.statusCode == 200;
     } catch (e) {
       print('Error deleting expense: $e');
