@@ -3,10 +3,10 @@ import 'package:http/http.dart' as http;
 import '../models/expense.dart';
 
 class ApiService {
-  static const baseUrl = 'http://192.168.4.170:3000';
+  static const baseUrl = 'https://expense-server-iqv1.onrender.com';
 
   static Future<List<Expense>?> fetchExpenses() async {
-    final response = await http.get(Uri.parse("http://192.168.4.170:3000/expenses"));
+    final response = await http.get(Uri.parse("$baseUrl/expenses"));
     if (response.statusCode == 200) {
       final List jsonData = json.decode(response.body);
       print('Loaded expenses JSON: ${response.body}');
@@ -20,7 +20,7 @@ class ApiService {
 
   static Future<void> addExpense(String title, double amount, String category) async {
     await http.post(
-      Uri.parse(baseUrl),
+      Uri.parse('$baseUrl/expenses'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'title': title, 'amount': amount, 'category': category}),
     );

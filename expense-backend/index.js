@@ -23,5 +23,5 @@ app.get('/', (req, res) => {
 
 //------------------ Start server ------------------------------//
 app.listen(PORT, () => {
-  console.log(`Server is running on http://192.168.x.x:${PORT}`);
+  console.log(`Server is running on https://expense-server-iqv1.onrender.com`);
 });
