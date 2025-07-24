@@ -26,6 +26,7 @@ class ApiService {
     String title,
     double amount,
     String? category,
+    DateTime date,
   ) async {
     try {
       final response = await http.post(
@@ -35,6 +36,7 @@ class ApiService {
           'title': title,
           'amount': amount,
           'category': category,
+          'created_at': date.toIso8601String(),
         }),
       );
       print('Add status code: ${response.statusCode}');
@@ -54,6 +56,33 @@ class ApiService {
       return response.statusCode == 200;
     } catch (e) {
       print('Error deleting expense: $e');
+      return false;
+    }
+  }
+
+  static Future<bool> updateExpense(
+    int id,
+    String title,
+    double amount,
+    String? category,
+    DateTime date,
+  ) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/$id'),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'title': title,
+          'amount': amount,
+          'category': category,
+          'created_at': date.toIso8601String(),
+        }),
+      );
+      print('Update status code: ${response.statusCode}');
+      print('Update response body: ${response.body}');
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Error updating expense: $e');
       return false;
     }
   }
