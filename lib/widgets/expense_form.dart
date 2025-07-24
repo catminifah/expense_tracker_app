@@ -1,10 +1,10 @@
-import 'package:expense_tracker_app/models/expense.dart';
 import 'package:flutter/material.dart';
 
 class ExpenseForm extends StatefulWidget {
   final Function(String, double, String, DateTime) onSubmit;
-  final Expense? expense;
-  const ExpenseForm({super.key, required this.onSubmit, this.expense});
+  final String? initialCategory;
+  final DateTime? initialDate;
+  const ExpenseForm({super.key, required this.onSubmit, this.initialCategory, this.initialDate});
 
   @override
   State<ExpenseForm> createState() => _ExpenseFormState();
@@ -19,18 +19,14 @@ class _ExpenseFormState extends State<ExpenseForm> {
   @override
   void initState() {
     super.initState();
-    if (widget.expense != null) {
-      _titleController.text = widget.expense!.title;
-      _amountController.text = widget.expense!.amount.toString();
-      _category = widget.expense!.category ?? 'ทั่วไป';
-      _selectedDate = widget.expense!.createdAt ?? DateTime.now();
-    }
+    _category = widget.initialCategory ?? 'ทั่วไป';
+    _selectedDate = widget.initialDate ?? DateTime.now();
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(widget.expense == null ? 'เพิ่มรายจ่าย' : 'แก้ไขรายจ่าย'),
+      title: const Text('เพิ่มรายจ่าย'),
       content: SingleChildScrollView(
         child: Column(
           children: [

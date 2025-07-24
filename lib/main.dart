@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/home_screen.dart';
-import 'screens/analytics_screen.dart';
-import 'screens/budget_screen.dart';
+import 'screens/main_navigation.dart';
 
 void main() => runApp(const MyApp());
 
@@ -22,37 +20,6 @@ class MyApp extends StatelessWidget {
       ),
       themeMode: ThemeMode.system,
       home: const MainNavigation(),
-    );
-  }
-}
-
-class MainNavigation extends StatefulWidget {
-  const MainNavigation({super.key});
-  @override
-  State<MainNavigation> createState() => _MainNavigationState();
-}
-
-class _MainNavigationState extends State<MainNavigation> {
-  int _selectedIndex = 0;
-  final _pages = [
-    const HomeScreen(),
-    const AnalyticsScreen(),
-    const BudgetScreen(),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: _pages[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (i) => setState(() => _selectedIndex = i),
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'หน้าหลัก'),
-          BottomNavigationBarItem(icon: Icon(Icons.bar_chart), label: 'วิเคราะห์'),
-          BottomNavigationBarItem(icon: Icon(Icons.account_balance_wallet), label: 'งบประมาณ'),
-        ],
-      ),
     );
   }
 }
