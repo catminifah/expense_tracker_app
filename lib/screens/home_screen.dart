@@ -1,3 +1,6 @@
+import 'package:expense_tracker_app/widgets/empty_state.dart';
+import 'package:expense_tracker_app/widgets/expense_category_filter.dart';
+import 'package:expense_tracker_app/widgets/expense_search_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../models/expense.dart';
@@ -64,9 +67,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _checkBudget() {
-    final total = expenses
-        .where((e) => e.createdAt?.month == selectedMonth)
-        .fold(0.0, (sum, e) => sum + e.amount);
+    final total = expenses.where((e) => e.createdAt?.month == selectedMonth).fold(0.0, (sum, e) => sum + e.amount);
     if (total > monthlyBudget) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -74,11 +75,8 @@ class _HomeScreenState extends State<HomeScreen> {
         );
       });
     }
-    // แจ้งเตือนเกินงบหมวด
     categoryBudgets.forEach((cat, limit) {
-      final catTotal = expenses
-          .where((e) => e.category == cat && e.createdAt?.month == selectedMonth)
-          .fold(0.0, (sum, e) => sum + e.amount);
+      final catTotal = expenses.where((e) => e.category == cat && e.createdAt?.month == selectedMonth).fold(0.0, (sum, e) => sum + e.amount);
       if (limit > 0 && catTotal > limit) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -89,7 +87,12 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  Future<void> _addExpense() async {
+  Future<void> _addExpense(
+    String title,
+    String amountText,
+    String? category,
+    DateTime date,
+  ) async {
     final title = titleController.text.trim();
     final amount = double.tryParse(amountController.text.trim());
     if (title.isEmpty || amount == null || selectedCategory == null) return;
@@ -99,7 +102,12 @@ class _HomeScreenState extends State<HomeScreen> {
       amountController.clear();
       selectedCategory = null;
       selectedDate = DateTime.now();
-      _loadExpenses();
+      await _loadExpenses();
+      setState(() {});
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("เพิ่มรายจ่ายไม่สำเร็จ !!!")));
     }
   }
 
@@ -174,7 +182,6 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Stack(
           alignment: Alignment.center,
           children: [
-            // Gradient shadow effect
             Container(
               width: 68,
               height: 68,
@@ -235,7 +242,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: ListView(
                     padding: const EdgeInsets.all(0),
                     children: [
-                      // Top Card: Budget Summary
                       Container(
                         width: double.infinity,
                         decoration: const BoxDecoration(
@@ -270,8 +276,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       const SizedBox(height: 24),
-                      // ...ย้าย SearchBar ไปไว้ใต้ Latest Entries...
-                      // Overview Section
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         child: Row(
@@ -569,34 +573,59 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _showAddExpenseForm() {
-    showDialog(
-      context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: Colors.white,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: const Text('เพิ่มรายจ่าย', style: TextStyle(color: Colors.indigo, fontWeight: FontWeight.bold)),
-        content: SingleChildScrollView(
-          child: buildExpenseForm(
-            titleController: titleController,
-            amountController: amountController,
-            selectedCategory: selectedCategory ?? categories.first,
-            categories: categories,
-            onCategoryChanged: (val) => setState(() => selectedCategory = val),
-            selectedDate: selectedDate,
-            onDateChanged: (date) => setState(() => selectedDate = date),
-            onSave: () {
-              Navigator.pop(context);
-              _addExpense();
-            },
-          ),
-        ),
-        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-        contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
-      ),
-    );
-  }
+  String formCategory = categories.first;
+  DateTime formDate = DateTime.now();
 
-  Widget buildExpenseForm({
+  final titleController = TextEditingController();
+  final amountController = TextEditingController();
+
+  showDialog(
+    context: context,
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            backgroundColor: Colors.white,
+              surfaceTintColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: const Text(
+                "เพิ่มรายจ่าย",
+                style: TextStyle(
+                  color: Colors.indigo,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            content: buildExpenseForm(
+              titleController: titleController,
+              amountController: amountController,
+              selectedCategory: formCategory,
+              categories: categories,
+              onCategoryChanged: (cat) {
+                setDialogState(() => formCategory = cat);
+              },
+              selectedDate: formDate,
+              onDateChanged: (date) => setDialogState(() => formDate = date),
+              onSave: () {
+                Navigator.pop(context);
+                _addExpense(
+                  titleController.text.trim(),
+                  amountController.text.trim(),
+                  formCategory,
+                  formDate,
+                );
+              },
+            ),
+          );
+        },
+      );
+    },
+  );
+}
+
+
+  /*Widget buildExpenseForm({
     required TextEditingController titleController,
     required TextEditingController amountController,
     required String selectedCategory,
@@ -734,6 +763,181 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ],
     );
+  }*/
+
+  Widget buildExpenseForm({
+    required TextEditingController titleController,
+    required TextEditingController amountController,
+    required String selectedCategory,
+    required List<String> categories,
+    required Function(String) onCategoryChanged,
+    required DateTime selectedDate,
+    required Function(DateTime) onDateChanged,
+    required VoidCallback onSave,
+  }) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Input ชื่อรายการ
+        TextField(
+          controller: titleController,
+          style: const TextStyle(
+            color: Colors.indigo,
+            fontWeight: FontWeight.w600,
+          ),
+          decoration: InputDecoration(
+            labelText: "ชื่อรายการ",
+            labelStyle: const TextStyle(color: Colors.indigo),
+            prefixIcon: const Icon(Icons.edit, color: Colors.indigo),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            filled: true,
+            fillColor: Colors.white,
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.indigo, width: 1.8),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.indigo, width: 2.2),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+
+        // Input จำนวนเงิน
+        TextField(
+          controller: amountController,
+          keyboardType: TextInputType.number,
+          style: const TextStyle(
+            color: Colors.indigo,
+            fontWeight: FontWeight.w600,
+          ),
+          decoration: InputDecoration(
+            labelText: "จำนวนเงิน",
+            labelStyle: const TextStyle(color: Colors.indigo),
+            prefixIcon: const Icon(Icons.attach_money, color: Colors.indigo),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            filled: true,
+            fillColor: Colors.white,
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.indigo, width: 1.8),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: Colors.indigo, width: 2.2),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+
+        // ส่วนเลือกหมวดแบบใหม่ (ไม่กระทบ state หน้า Home)
+        Align(
+          alignment: Alignment.centerLeft,
+          child: Wrap(
+            spacing: 8,
+            children: List.generate(categories.length, (index) {
+              final cat = categories[index];
+              final isSelected = selectedCategory == cat;
+              return ChoiceChip(
+                label: Text(cat),
+                selected: isSelected,
+                onSelected: (_) =>
+                    onCategoryChanged(cat), // ใช้ state ภายในฟอร์ม
+                backgroundColor: Colors.grey[200],
+                selectedColor: Colors.indigo,
+                labelStyle: TextStyle(
+                  color: isSelected ? Colors.white : Colors.indigo,
+                  fontWeight: FontWeight.bold,
+                ),
+              );
+            }),
+          ),
+        ),
+
+        const SizedBox(height: 8),
+
+        // เลือกวันที่
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                "วันที่: ${selectedDate.toLocal().toString().split(' ')[0]}",
+                style: const TextStyle(
+                  color: Colors.indigo,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            IconButton(
+              icon: const Icon(Icons.calendar_today, color: Colors.indigo),
+              onPressed: () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: selectedDate,
+                  firstDate: DateTime(2022),
+                  lastDate: DateTime.now(),
+                );
+                if (picked != null) onDateChanged(picked);
+              },
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 16),
+
+        // ปุ่มบันทึก
+        SizedBox(
+          width: double.infinity,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF4F8BFF), Color(0xFF1B3FA6)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.indigo.withOpacity(0.18),
+                  blurRadius: 12,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Material(
+              color: Colors.transparent,
+              borderRadius: BorderRadius.circular(16),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: onSave,
+                splashColor: Colors.white24,
+                highlightColor: Colors.white10,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Icon(Icons.save, color: Colors.white, size: 26),
+                      SizedBox(width: 10),
+                      Text(
+                        "บันทึก",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 1.1,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   void _showBudgetSettings() {
@@ -784,111 +988,6 @@ class _HomeScreenState extends State<HomeScreen> {
             child: const Text('บันทึก'),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class ExpenseSearchBar extends StatelessWidget {
-  final TextEditingController controller;
-  final ValueChanged<String> onChanged;
-
-  const ExpenseSearchBar({
-    Key? key,
-    required this.controller,
-    required this.onChanged,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      elevation: 2,
-      borderRadius: BorderRadius.circular(16),
-      child: TextField(
-        controller: controller,
-        onChanged: onChanged,
-        style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.w500),
-        decoration: InputDecoration(
-          hintText: "ค้นหารายการ",
-          hintStyle: const TextStyle(color: Colors.black38),
-          prefixIcon: const Icon(Icons.search, color: Colors.indigo),
-          filled: true,
-          fillColor: Colors.white,
-          contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide.none,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// BudgetSummaryCard ไม่จำเป็นอีกต่อไป เพราะย้ายไปอยู่ใน top card gradient แล้ว
-
-class ExpenseCategoryFilter extends StatelessWidget {
-  final List<String> categories;
-  final String? selectedCategory;
-  final ValueChanged<String?> onChanged;
-
-  const ExpenseCategoryFilter({
-    Key? key,
-    required this.categories,
-    required this.selectedCategory,
-    required this.onChanged,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      children: [
-        ChoiceChip(
-          label: const Text("ทั้งหมด"),
-          selected: selectedCategory == null,
-          onSelected: (_) => onChanged(null),
-          backgroundColor: Colors.grey[200],
-          selectedColor: Colors.indigo,
-          labelStyle: TextStyle(
-            color: selectedCategory == null ? Colors.white : Colors.indigo,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        ...categories.map((cat) {
-          final isSelected = selectedCategory == cat;
-          return ChoiceChip(
-            label: Text(cat),
-            selected: isSelected,
-            onSelected: (_) => onChanged(cat),
-            backgroundColor: Colors.grey[200],
-            selectedColor: Colors.indigo,
-            labelStyle: TextStyle(
-              color: isSelected ? Colors.white : Colors.indigo,
-              fontWeight: FontWeight.bold,
-            ),
-          );
-        }),
-      ],
-    );
-  }
-}
-
-class EmptyState extends StatelessWidget {
-  final String message;
-
-  const EmptyState({
-    Key? key,
-    required this.message,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Text(
-        message,
-        style: TextStyle(color: Colors.grey[600], fontSize: 16),
-        textAlign: TextAlign.center,
       ),
     );
   }
