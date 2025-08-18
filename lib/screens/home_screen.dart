@@ -30,6 +30,8 @@ class _HomeScreenState extends State<HomeScreen> {
   DateTime selectedDate = DateTime.now();
 
   final List<String> categories = ['อาหาร', 'เดินทาง', 'บันเทิง', 'ค่าใช้จ่ายบ้าน', 'อื่นๆ'];
+  double? total;
+
 
   @override
   void initState() {
@@ -67,8 +69,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _checkBudget() {
-    final total = expenses.where((e) => e.createdAt?.month == selectedMonth).fold(0.0, (sum, e) => sum + e.amount);
-    if (total > monthlyBudget) {
+    total = expenses.where((e) => e.createdAt?.month == selectedMonth).fold(0.0, (sum, e) => sum! + e.amount);
+    if (total! > monthlyBudget) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('คุณใช้เงินเกินงบเดือนนี้แล้ว!')),
@@ -93,10 +95,10 @@ class _HomeScreenState extends State<HomeScreen> {
     String? category,
     DateTime date,
   ) async {
-    final title = titleController.text.trim();
-    final amount = double.tryParse(amountController.text.trim());
-    if (title.isEmpty || amount == null || selectedCategory == null) return;
-    final success = await ApiService.addExpense(title, amount, selectedCategory, selectedDate);
+    final titletext = titleController;
+    final amount = double.tryParse(amountText.trim());
+    if (title == "" || amount == null || category == null) return;
+    final success = await ApiService.addExpense(title, amount, category, date);
     if (success) {
       titleController.clear();
       amountController.clear();
@@ -159,7 +161,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final filtered = filteredExpenses;
-    final total = filtered.fold(0.0, (sum, e) => sum + e.amount);
+    final total_all = filtered.fold(0.0, (sum, e) => sum + e.amount);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF6F8FB),
@@ -262,16 +264,25 @@ class _HomeScreenState extends State<HomeScreen> {
                             const Text('ยอดรวมเดือนนี้', style: TextStyle(color: Colors.white70, fontSize: 18)),
                             const SizedBox(height: 8),
                             Text(
-                              '${total.toStringAsFixed(2)} / $monthlyBudget ฿',
+                              '${total?.toStringAsFixed(2)} / $monthlyBudget ฿',
                               style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.2),
                             ),
                             const SizedBox(height: 8),
+                            const SizedBox(height: 8),
                             LinearProgressIndicator(
-                              value: (monthlyBudget > 0) ? (total / monthlyBudget).clamp(0, 1) : 0,
+                              value: (monthlyBudget > 0) ? (total! / monthlyBudget).clamp(0, 1) : 0,
                               backgroundColor: Colors.white24,
-                              color: total > monthlyBudget ? Colors.redAccent : Colors.white,
+                              color: total! > monthlyBudget ? Colors.redAccent : Colors.white,
                               minHeight: 8,
                             ),
+                            const SizedBox(height: 8),
+                            const Text('ค่าใช้จ่ายรวมปีนี้', style: TextStyle(color: Colors.white70, fontSize: 18)),
+                            const SizedBox(height: 8),
+                            Text(
+                              '${total_all.toStringAsFixed(2)} ฿',
+                              style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white, letterSpacing: 1.2),
+                            ),
+                            
                           ],
                         ),
                       ),
@@ -831,7 +842,6 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         const SizedBox(height: 8),
 
-        // ส่วนเลือกหมวดแบบใหม่ (ไม่กระทบ state หน้า Home)
         Align(
           alignment: Alignment.centerLeft,
           child: Wrap(
